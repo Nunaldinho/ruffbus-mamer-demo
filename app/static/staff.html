@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Ruffbus Mamer – centrale (prototype)</title>
+<link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/static/app.css">
+<script src="/static/common.js" defer></script>
+<script src="/static/i18n.js" defer></script>
+<script src="/static/staff.js" defer></script>
+</head>
+<body class="staff">
+<div class="demo" role="note"><strong id="demotag">Prototype.</strong> <span id="bannertext"></span></div>
+<header>
+  <div class="bar">
+    <a class="brand" href="/staff">
+      <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><rect x="3" y="7" width="34" height="22" rx="6" fill="#0E7C5A"/><rect x="7" y="11" width="11" height="8" rx="2" fill="#fff"/><rect x="21" y="11" width="11" height="8" rx="2" fill="#fff"/><circle cx="12" cy="31" r="4" fill="#1D2B36"/><circle cx="28" cy="31" r="4" fill="#1D2B36"/><path d="M19 21 l3 0 -2 4 3 0 -5 6 1.5-4.5-2.5 0z" fill="#F2C230"/></svg>
+      <span>Ruffbus Mamer<small id="apptitle"></small></span>
+    </a>
+    <div class="right">
+      <div class="acct" id="acct"></div>
+      <div class="langs" role="group" aria-label="Langue / Language"><button type="button" data-lang="fr">FR</button><button type="button" data-lang="en">EN</button></div>
+    </div>
+  </div>
+  <nav class="tabs" role="tablist" id="tabs" hidden></nav>
+</header>
+<main id="main">
+  <section id="v-login" hidden></section>
+  <section id="v-day" hidden></section>
+  <section id="v-week" hidden></section>
+  <section id="v-sms" hidden></section>
+  <section id="v-audit" hidden></section>
+  <section id="v-data" hidden></section>
+</main>
+<footer id="foot"></footer>
+</body>
+</html>

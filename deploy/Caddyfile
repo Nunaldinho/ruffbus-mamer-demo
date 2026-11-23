@@ -1,0 +1,8 @@
+# HTTPS in front of the app. Caddy gets and renews the certificate for $DOMAIN automatically.
+{$DOMAIN} {
+	encode zstd gzip
+	request_body {
+		max_size 64KB
+	}
+	reverse_proxy app:8000
+}

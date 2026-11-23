@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Ruffbus Mamer – réservation en ligne (prototype)</title>
+<link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/static/app.css">
+<script src="/static/common.js" defer></script>
+<script src="/static/i18n.js" defer></script>
+<script src="/static/resident.js" defer></script>
+</head>
+<body>
+<div class="demo" role="note"><strong data-i18n="demoTag"></strong> <span data-i18n="banner"></span><span id="bannerextra"></span></div>
+<header>
+  <div class="bar">
+    <a class="brand" href="/">
+      <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><rect x="3" y="7" width="34" height="22" rx="6" fill="#0E7C5A"/><rect x="7" y="11" width="11" height="8" rx="2" fill="#fff"/><rect x="21" y="11" width="11" height="8" rx="2" fill="#fff"/><circle cx="12" cy="31" r="4" fill="#1D2B36"/><circle cx="28" cy="31" r="4" fill="#1D2B36"/><path d="M19 21 l3 0 -2 4 3 0 -5 6 1.5-4.5-2.5 0z" fill="#F2C230"/></svg>
+      <span>Ruffbus Mamer<small data-i18n="tagline"></small></span>
+    </a>
+    <div class="right">
+      <div class="acct" id="acct" aria-live="polite"></div>
+      <div class="langs" role="group" aria-label="Langue / Sprache / Language / Língua">
+        <button type="button" data-lang="fr">FR</button><button type="button" data-lang="de">DE</button><button type="button" data-lang="en">EN</button><button type="button" data-lang="pt">PT</button>
+      </div>
+    </div>
+  </div>
+  <nav class="tabs" role="tablist">
+    <button type="button" role="tab" data-tab="book" data-i18n="tabBook"></button>
+    <button type="button" role="tab" data-tab="mine" data-i18n="tabMine"></button>
+    <button type="button" role="tab" data-tab="privacy" data-i18n="tabPrivacy"></button>
+    <button type="button" role="tab" data-tab="about" data-i18n="tabAbout"></button>
+  </nav>
+</header>
+
+<main id="main">
+  <section id="v-book" role="tabpanel">
+    <div class="intro">
+      <h1 data-i18n="heroTitle"></h1>
+      <p data-i18n="heroSub"></p>
+    </div>
+    <div class="layout">
+      <form id="form" novalidate>
+        <ol class="route">
+          <li class="stop" id="s-pickup">
+            <div class="marker" aria-hidden="true">1</div>
+            <div class="card"><h2 data-i18n="stopPickup"></h2><div class="endpoint" data-end="pickup"></div></div>
+          </li>
+          <li class="stop" id="s-dropoff">
+            <div class="marker" aria-hidden="true">2</div>
+            <div class="card"><h2 data-i18n="stopDropoff"></h2><div class="endpoint" data-end="dropoff"></div></div>
+          </li>
+          <li class="stop" id="s-when">
+            <div class="marker" aria-hidden="true">3</div>
+            <div class="card">
+              <h2 data-i18n="stopWhen"></h2>
+              <div class="field">
+                <span class="lab" id="lab-day" data-i18n="date"></span>
+                <div class="days" id="days" role="group" aria-labelledby="lab-day"></div>
+                <p class="hint" id="hourshint"></p>
+              </div>
+              <div class="field">
+                <label class="lab" for="time" data-i18n="time"></label>
+                <select id="time"></select>
+                <p class="hint" id="fullhint" data-i18n="fullHint" hidden></p>
+              </div>
+              <label class="check"><input type="checkbox" id="ret"><span data-i18n="returnTrip"></span></label>
+              <div class="sub" id="retbox" hidden>
+                <label class="lab" for="rettime" data-i18n="returnTime"></label>
+                <select id="rettime"></select>
+              </div>
+              <label class="check"><input type="checkbox" id="rep"><span data-i18n="repeat"></span></label>
+              <div class="sub" id="repbox" hidden>
+                <span class="lab" id="lab-wd" data-i18n="repeatDays"></span>
+                <div class="chips" id="wdays" role="group" aria-labelledby="lab-wd"></div>
+                <div class="field">
+                  <label class="lab" for="weeks" data-i18n="repeatWeeks"></label>
+                  <select id="weeks"></select>
+                </div>
+                <p class="hint" data-i18n="repeatHint"></p>
+              </div>
+              <div class="errmsg stepmsg" id="when-err"></div>
+            </div>
+          </li>
+          <li class="stop" id="s-who">
+            <div class="marker" aria-hidden="true">4</div>
+            <div class="card">
+              <h2 data-i18n="stopWho"></h2>
+              <div class="stepper"><span id="lab-ad" data-i18n="adults"></span><div class="ctl"><button type="button" data-step="adults" data-d="-1" aria-label="−">−</button><output id="adults" aria-labelledby="lab-ad">1</output><button type="button" data-step="adults" data-d="1" aria-label="+">+</button></div></div>
+              <div class="stepper"><span id="lab-ch" data-i18n="children"></span><div class="ctl"><button type="button" data-step="children" data-d="-1" aria-label="−">−</button><output id="children" aria-labelledby="lab-ch">0</output><button type="button" data-step="children" data-d="1" aria-label="+">+</button></div></div>
+              <p class="hint" data-i18n="childrenNote"></p>
+              <div class="field">
+                <span class="lab" id="lab-needs" data-i18n="needs"></span>
+                <div class="chips" id="needs" role="group" aria-labelledby="lab-needs"></div>
+                <p class="hint" data-i18n="needsNote"></p>
+              </div>
+              <div class="errmsg stepmsg" id="who-err"></div>
+            </div>
+          </li>
+          <li class="stop" id="s-me">
+            <div class="marker" aria-hidden="true">5</div>
+            <div class="card">
+              <h2 data-i18n="stopContact"></h2>
+              <div class="field">
+                <label class="lab" for="name" data-i18n="name"></label>
+                <input type="text" id="name" autocomplete="name" maxlength="80">
+              </div>
+              <div class="field" id="phonebox">
+                <label class="lab" for="phone" data-i18n="phone"></label>
+                <input type="tel" id="phone" autocomplete="tel" inputmode="tel" maxlength="24" placeholder="621 123 456">
+                <p class="hint" data-i18n="phoneHint"></p>
+              </div>
+              <div class="field signedin" id="signedbox" hidden></div>
+              <label class="check"><input type="checkbox" id="sms" checked><span data-i18n="sms"></span></label>
+              <div id="resbox" hidden>
+                <label class="check"><input type="checkbox" id="resident"><span data-i18n="resident"></span></label>
+                <p class="hint" data-i18n="residentNote"></p>
+              </div>
+              <div class="errmsg stepmsg" id="me-err"></div>
+              <div class="verify" id="verify" hidden>
+                <p id="codesent" style="margin:0 0 .4rem"></p>
+                <label class="lab" for="code" data-i18n="codeLabel"></label>
+                <div class="coderow">
+                  <input type="text" id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]*">
+                  <button type="button" class="primary" id="verifybtn" data-i18n="verifyBook"></button>
+                </div>
+                <p class="democode" id="democode" hidden></p>
+                <p class="errmsg" id="codeerr"></p>
+                <p class="hint"><button type="button" class="linkish" id="resend" data-i18n="resend"></button> &nbsp; <button type="button" class="linkish" id="changenum" data-i18n="changeNumber"></button></p>
+              </div>
+            </div>
+          </li>
+        </ol>
+        <div class="submitrow">
+          <button class="primary" type="submit" id="submit" data-i18n="submit"></button>
+          <span class="formerr" id="formerr" role="alert"></span>
+        </div>
+        <div class="ask" id="ask" hidden role="alert">
+          <p id="asktext"></p>
+          <div class="btns"><button type="button" class="primary" id="bookrest" data-i18n="bookRest"></button><button type="button" class="ghost" id="changetimes" data-i18n="changeTimes"></button></div>
+        </div>
+      </form>
+      <aside class="ticketwrap" aria-live="polite">
+        <div class="ticket" id="ticket"></div>
+      </aside>
+    </div>
+  </section>
+
+  <section id="v-done" hidden></section>
+
+  <section id="v-mine" role="tabpanel" hidden>
+    <div class="intro"><h1 data-i18n="mineTitle"></h1></div>
+    <div class="list" id="minelist"></div>
+  </section>
+
+  <section id="v-privacy" role="tabpanel" hidden>
+    <div class="prose" id="privacybody"></div>
+    <div class="prose"><h2 data-i18n="yourDataTitle"></h2></div>
+    <div id="datatools"></div>
+  </section>
+
+  <section id="v-about" role="tabpanel" hidden>
+    <div class="prose" id="aboutbody"></div>
+  </section>
+</main>
+<footer><span data-i18n="footer"></span> <a href="/staff" data-i18n="staffLink"></a></footer>
+</body>
+</html>

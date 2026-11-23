@@ -1,0 +1,38 @@
+# Render Blueprint: a public demo of the Ruffbus Mamer prototype.
+# In the Render dashboard: New > Blueprint > choose this repository > Apply.
+# It creates the web app and its database in Frankfurt, on Render's free plan.
+services:
+  - type: web
+    name: ruffbus-mamer-demo
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /healthz
+    autoDeploy: true            # every change pushed to GitHub is deployed
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ruffbus-demo-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true     # random, made by Render; never stored in the repository
+      - key: DEMO_MODE
+        value: "true"
+      - key: SEED_DEMO_DATA
+        value: "true"
+      - key: DEMO_DAILY_RESET
+        value: "true"           # visitors' entries are wiped and sample rides reloaded every day
+      - key: COOKIE_SECURE
+        value: "true"           # Render serves the site over HTTPS
+      - key: FORWARDED_ALLOW_IPS
+        value: "*"              # trust Render's proxy for each visitor's address (rate limits)
+
+databases:
+  - name: ruffbus-demo-db
+    plan: free                  # Render deletes free databases after 30 days (+14 days' grace)
+    region: frankfurt
+    databaseName: ruffbus
+    user: ruffbus
+    postgresMajorVersion: "16"
+    ipAllowList: []             # no connections from the internet; only the app on Render's private network
