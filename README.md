@@ -11,8 +11,8 @@ This is not an official service of the Commune de Mamer or of the operator. It w
 ## What it does
 
 **Residents** (`/`)
-- Request a ride in five steps: pick-up, drop-off, time, passengers, contact details. The service rules are enforced on the server: pick-ups 9:00–17:45, no public holidays, 8 seats, children under 13 with an adult, and outside the commune only the listed destinations, for residents only.
-- See for each pick-up time how many minibuses are free, add a return trip, and repeat a trip every week for up to four weeks (for example a daily crèche pick-up).
+- Request a ride in five steps: pick-up, drop-off, time, passengers, contact details. The service rules are enforced on the server: book at least 1 hour ahead (as the Mamer flyer says), pick-ups 9:00–17:45, no public holidays, 8 seats, children under 13 with an adult, and outside the commune only the listed destinations, for residents only.
+- See for each pick-up time how many minibuses are free, add a return trip, and book the same trip on up to three of the next seven days in one request (for example a crèche pick-up on Monday, Wednesday and Friday).
 - Sign in with a one-time code sent by text message: no password. See and cancel their rides. Download or delete their data.
 
 **Call centre** (`/staff`, role *dispatcher*)
@@ -80,7 +80,7 @@ pip install -r requirements-dev.txt
 TEST_DATABASE_URL=postgresql://ruffbus:ruffbus@localhost:5432/ruffbus_test pytest
 ```
 
-37 tests cover the service rules and public holidays, the overbooking guard (including ten simultaneous bookings), fleet operations, login codes and their limits, what each role may see and do, data export, erasure and retention, and the daily demo reset. The test database is wiped on every run.
+40 tests cover the service rules and public holidays, bookings over several days, the overbooking guard (including ten simultaneous bookings), fleet operations, login codes and their limits, what each role may see and do, data export, erasure and retention, and the daily demo reset. The test database is wiped on every run.
 
 ## Configuration
 
@@ -103,7 +103,7 @@ Set in the environment or in `.env` (see [`.env.example`](.env.example)).
 - Set `DEMO_MODE=false`, a random `SECRET_KEY` and HTTPS (`COOKIE_SECURE=true`).
 - Connect the operator's SMS gateway in [`app/sms.py`](app/sms.py). Today messages are written to the server log and shown in the staff screen.
 - Create real staff accounts with `python -m app.cli create-staff NAME --role dispatcher` (or `viewer`, `admin`), and remove the demo ones.
-- Confirm with the commune the assumptions marked `ASSUMPTION` in [`app/rules.py`](app/rules.py): booking at least 30 minutes and at most 7 days ahead, ride times per zone.
+- Confirm with the commune the assumptions marked `ASSUMPTION` in [`app/rules.py`](app/rules.py): booking at most 7 days ahead, up to 3 days per request, ride times per zone. The 1-hour notice comes from the Mamer flyer.
 - Agree the data-protection set-up with the commune's data protection officer: see [`docs/GDPR.md`](docs/GDPR.md).
 - Back up the database every night (`pg_dump`), rotate the server logs, and monitor `/healthz`.
 

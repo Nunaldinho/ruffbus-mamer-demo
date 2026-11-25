@@ -39,7 +39,7 @@ turned_away ──── requests refused because every bus was busy (no persona
 audit_log ────── who did what (staff by username, residents by number only)
 ```
 
-A booking with a return trip and weekly repeats becomes several rides; each ride is placed on a bus independently. Personal columns are grouped in `booking` so that anonymisation clears them in one statement while the village, destination, time and number of passengers stay for statistics.
+A booking with a return trip, or for several days (up to three), becomes several rides; each ride is placed on a bus independently. Personal columns are grouped in `booking` so that anonymisation clears them in one statement while the village, destination, time and number of passengers stay for statistics.
 
 ## The overbooking guard
 

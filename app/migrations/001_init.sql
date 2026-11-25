@@ -68,7 +68,7 @@ CREATE TABLE session (
   CHECK ((resident_id IS NULL) <> (staff_id IS NULL))
 );
 
--- One request from a passenger. It can cover several rides (return trip, weekly repeats).
+-- One request from a passenger. It can cover several rides (return trip, several days).
 CREATE TABLE booking (
   id                bigserial PRIMARY KEY,
   ref               text NOT NULL UNIQUE,

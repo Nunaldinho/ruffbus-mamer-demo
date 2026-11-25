@@ -74,6 +74,16 @@ def test_resident_books_sees_and_cancels(client):
     assert client.get("/api/me/rides").json()["rides"][0]["status"] == "cancelled"
 
 
+def test_resident_books_the_same_trip_on_several_days(client):
+    resident_login(client)
+    r = client.post("/api/bookings", json={**trip(more_dates=["2026-11-27", "2026-11-25"]), "name": "Nuno"})
+    assert r.status_code == 201, r.text
+    assert [x["date"] for x in r.json()["rides"]] == ["2026-11-23", "2026-11-25", "2026-11-27"]
+    r = client.post("/api/bookings", json={**trip(more_dates=["2026-11-24", "2026-11-25", "2026-11-26"]),
+                                           "name": "Nuno"})
+    assert r.status_code == 422 and r.json()["errors"] == {"when": "errMaxDays"}
+
+
 def test_residents_cannot_touch_each_others_rides(client):
     resident_login(client, "621 111 111")
     ride_id = client.post("/api/bookings", json={**trip(), "name": "First"}).json()["rides"][0]["ride_id"]
@@ -100,9 +110,8 @@ def test_staff_account_locks_after_five_failures(client, conn):
 
 def _some_rides(conn):
     t = trip_in(time="10:00")
-    legs, skipped = rules.legs_for(t, clock.now())
     p = Passenger("web", "en", "Maria Example", "+352621999999", t.pickup, t.dropoff, 1, 0, ["wheel"], True, True)
-    return booking.book(conn, p, legs, skipped)
+    return booking.book(conn, p, rules.legs_for(t))
 
 
 def test_viewer_sees_no_personal_data_and_cannot_act(client, conn):
@@ -167,9 +176,9 @@ def test_retention_anonymises_old_bookings_only(conn):
     _some_rides(conn)                                            # a ride today: keep
     old = trip_in(time="10:00")
     clock.freeze(MONDAY - timedelta(days=100))
-    legs, _ = rules.legs_for(old.model_copy(update={"date": clock.today()}), clock.now())
+    legs = rules.legs_for(old.model_copy(update={"date": clock.today()}))
     p = Passenger("phone", "fr", "Old Booking", "+352621888888", old.pickup, old.dropoff, 1, 0, [], True, True)
-    booking.book(conn, p, legs, [])
+    booking.book(conn, p, legs)
     conn.execute("""INSERT INTO otp_challenge (phone, code_hash, expires_at, created_at)
                     VALUES ('+352621888888', 'x', now(), %s)""", (clock.now(),))
     clock.freeze(MONDAY)

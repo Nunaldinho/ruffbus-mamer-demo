@@ -1,6 +1,6 @@
 """Bookings against the database: the overbooking guard, concurrency, fleet operations."""
 import threading
-from datetime import date, timedelta
+from datetime import date
 
 import psycopg
 import pytest
@@ -11,7 +11,7 @@ from app import booking, clock, rules
 from app.audit import Actor
 from app.booking import BookingError, Passenger
 
-from .conftest import MONDAY, TEST_URL, make_staff, trip_in
+from .conftest import TEST_URL, trip_in
 
 STAFF = Actor("staff", None, "test")
 
@@ -24,8 +24,8 @@ def passenger(t, **kw):
 
 def book(conn, accept_partial=True, dry_run=False, status="requested", **kw):
     t = trip_in(**kw)
-    legs, skipped = rules.legs_for(t, clock.now())
-    return booking.book(conn, passenger(t), legs, skipped, accept_partial=accept_partial, dry_run=dry_run, status=status)
+    return booking.book(conn, passenger(t), rules.legs_for(t), accept_partial=accept_partial, dry_run=dry_run,
+                        status=status)
 
 
 def test_database_refuses_two_rides_on_one_bus_at_the_same_time(conn):
@@ -100,10 +100,21 @@ def test_partial_booking_needs_consent(conn):
     assert len(out.booked) == 1 and out.failed[0].kind == "return"
 
 
-def test_weekly_repeat_books_every_day(conn):
-    out = book(conn, time="14:45", repeat_weekdays=[1, 2, 3, 4, 5], repeat_weeks=2)
-    assert len(out.booked) == 10
-    assert conn.execute("SELECT count(DISTINCT pickup_at::date) AS n FROM ride").fetchone()["n"] == 10
+def test_several_days_book_one_ride_per_day_and_leg(conn):
+    out = book(conn, time="14:45", return_time="16:00", more_dates=["2026-11-25", "2026-11-27"])
+    assert len(out.booked) == 6                                     # 3 days, out and back
+    days = conn.execute("SELECT DISTINCT pickup_at::date AS d FROM ride ORDER BY d").fetchall()
+    assert [r["d"] for r in days] == [date(2026, 11, 23), date(2026, 11, 25), date(2026, 11, 27)]
+
+
+def test_a_full_day_among_several_is_reported_before_booking_the_others(conn):
+    for _ in range(3):
+        book(conn, date="2026-11-25", time="10:00")                 # all three buses busy on Wednesday 10:00
+    with pytest.raises(BookingError) as e:
+        book(conn, accept_partial=False, time="10:00", more_dates=["2026-11-25"])
+    assert e.value.code == "partial" and e.value.extra["failed"][0]["date"] == "2026-11-25"
+    out = book(conn, accept_partial=True, time="10:00", more_dates=["2026-11-25"])
+    assert [r["date"] for r in out.booked] == ["2026-11-23"]
 
 
 def test_status_changes(conn):

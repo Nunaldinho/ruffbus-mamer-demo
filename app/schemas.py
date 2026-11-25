@@ -26,11 +26,10 @@ class EndpointIn(Strict):
 class TripIn(Strict):
     pickup: EndpointIn
     dropoff: EndpointIn
-    date: Optional[Date] = None
+    date: Optional[Date] = None                     # the first (or only) day
+    more_dates: list[Date] = Field(default_factory=list, max_length=7)  # same trip on other days (rules.DAYS_MAX)
     time: Optional[str] = Field(default=None, pattern=HHMM)
     return_time: Optional[str] = Field(default=None, pattern=HHMM)
-    repeat_weekdays: list[int] = Field(default_factory=list, max_length=7)  # ISO: 1 = Monday … 7 = Sunday
-    repeat_weeks: int = Field(default=1, ge=1, le=4)
     adults: int = Field(default=1, ge=0, le=8)
     children: int = Field(default=0, ge=0, le=8)
     needs: list[Need] = Field(default_factory=list, max_length=4)

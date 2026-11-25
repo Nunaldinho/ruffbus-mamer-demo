@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import csv
 import io
-from datetime import date, timedelta
+from datetime import date
 
 from fastapi import APIRouter, Depends, Query, Request, Response
 from fastapi.responses import StreamingResponse
@@ -170,14 +170,12 @@ def phone_booking(body: StaffBookingIn, staff: StaffSession = Depends(require(*O
         errors.setdefault("me", "errPhone")
     if errors:
         raise ApiError(422, "invalid", errors=errors)
-    legs, skipped = rules.legs_for(body, now)
     p = Passenger("phone", body.lang, body.name.strip(), phone, body.pickup, body.dropoff, body.adults,
                   body.children, list(dict.fromkeys(body.needs)), body.sms_updates, body.resident_declared,
                   staff_id=staff.id)
-    out = booking.book(conn, p, legs, skipped, status="confirmed", accept_partial=body.accept_partial,
+    out = booking.book(conn, p, rules.legs_for(body), status="confirmed", accept_partial=body.accept_partial,
                        actor=staff.actor)
-    return {"ref": out.ref, "rides": out.booked, "failed": [booking._leg_json(l) for l in out.failed],
-            "skipped": [d.isoformat() for d in skipped]}
+    return {"ref": out.ref, "rides": out.booked, "failed": [booking._leg_json(l) for l in out.failed]}
 
 
 # --- messages, audit, data protection -------------------------------------------------------------------

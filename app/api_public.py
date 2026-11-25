@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 
 from . import auth, booking, clock, privacy, rules
 from .auth import ResidentSession, current_resident, get_conn
-from .booking import BookingError, Passenger
+from .booking import Passenger
 from .config import settings
 from .errors import ApiError
 from .schemas import AvailabilityIn, BookingIn, CodeRequest, CodeVerify, TripIn
@@ -28,7 +28,7 @@ def config():
         "destinations": [{"id": k, "commune": c, "name": n} for k, (c, n) in rules.DESTINATIONS.items()],
         "needs": list(rules.NEEDS),
         "rules": {"lead_min": rules.LEAD_MIN, "window_days": rules.WINDOW_DAYS, "seats": rules.SEATS,
-                  "standing_weeks_max": rules.STANDING_WEEKS_MAX, "approach_min": rules.APPROACH_MIN,
+                  "days_max": rules.DAYS_MAX, "approach_min": rules.APPROACH_MIN,
                   "dwell_min": rules.DWELL_MIN},
         "retention_days": settings.retention_days,
         "sms_retention_days": settings.sms_retention_days,
@@ -50,12 +50,10 @@ def preview(body: TripIn, conn=Depends(get_conn)):
     errors = rules.validate_trip(body, now, for_booking=False)
     if errors:
         return {"ok": False, "errors": errors}
-    legs, skipped = rules.legs_for(body, now)
     p = Passenger("web", "fr", None, None, body.pickup, body.dropoff, body.adults, body.children,
                   list(body.needs))
-    out = booking.book(conn, p, legs, skipped, dry_run=True)
+    out = booking.book(conn, p, rules.legs_for(body), dry_run=True)
     return {"ok": True, "rides": len(out.booked), "failed": [booking._leg_json(l) for l in out.failed],
-            "skipped": [d.isoformat() for d in skipped],
             "ride_minutes": rules.ride_minutes(body.pickup, body.dropoff)}
 
 
@@ -104,13 +102,11 @@ def create_booking(body: BookingIn, who: ResidentSession = Depends(current_resid
         errors.setdefault("me", "errName")
     if errors:
         raise ApiError(422, "invalid", errors=errors)
-    legs, skipped = rules.legs_for(body, now)
     p = Passenger("web", body.lang, body.name.strip(), who.phone, body.pickup, body.dropoff, body.adults,
                   body.children, list(dict.fromkeys(body.needs)), body.sms_updates, body.resident_declared,
                   resident_id=who.id)
-    out = booking.book(conn, p, legs, skipped, accept_partial=body.accept_partial)
-    return {"ref": out.ref, "rides": out.booked, "failed": [booking._leg_json(l) for l in out.failed],
-            "skipped": [d.isoformat() for d in skipped]}
+    out = booking.book(conn, p, rules.legs_for(body), accept_partial=body.accept_partial)
+    return {"ref": out.ref, "rides": out.booked, "failed": [booking._leg_json(l) for l in out.failed]}
 
 
 def _my_ride(row) -> dict:

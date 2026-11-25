@@ -88,10 +88,9 @@ def _passenger(trip: TripIn, channel: str, name: str, phone: str, *, lang: str =
                      list(trip.needs), True, trip.resident_declared, resident_id=resident_id, staff_id=staff_id)
 
 
-def _book(conn, trip: TripIn, p: Passenger, now: datetime, status: str) -> booking.Outcome | None:
-    legs, skipped = rules.legs_for(trip, now)
+def _book(conn, trip: TripIn, p: Passenger, status: str) -> booking.Outcome | None:
     try:
-        return booking.book(conn, p, legs, skipped, status=status, accept_partial=True, actor=SEED)
+        return booking.book(conn, p, rules.legs_for(trip), status=status, accept_partial=True, actor=SEED)
     except BookingError:
         return None  # every bus busy: logged as turned away, like a real refusal
 
@@ -161,7 +160,7 @@ def seed(conn, now: datetime | None = None) -> dict:
         trip = TripIn(pickup=home, dropoff=EndpointIn(mode="dest", dest=dest), date=d, time=t, return_time=r,
                       adults=1, resident_declared=True)
         _book(conn, trip, _passenger(trip, "web", DEMO_RESIDENT_NAME, DEMO_RESIDENT_PHONE, lang="en",
-                                     resident_id=resident_id), now, status)
+                                     resident_id=resident_id), status)
 
     counts = {"bookings": 0, "turned_away_requests": 0}
     to_confirm: list[int] = []
@@ -178,7 +177,7 @@ def seed(conn, now: datetime | None = None) -> dict:
             p = _passenger(trip, "phone" if phone_call else "web", NAMES[who], f"+352600000{100 + who:03d}",
                            lang=rng.choices(["fr", "de", "en", "pt"], weights=[45, 30, 10, 15])[0],
                            staff_id=dispatcher_id if phone_call else None)
-            out = _book(conn, trip, p, now, "confirmed" if phone_call else "requested")
+            out = _book(conn, trip, p, "confirmed" if phone_call else "requested")
             if out is None:
                 counts["turned_away_requests"] += 1
                 continue
@@ -212,7 +211,7 @@ def seed(conn, now: datetime | None = None) -> dict:
         day = service_day(today - timedelta(days=back))
         rng = random.Random(f"old-{i}")
         trip, who = _random_trip(rng, day)
-        out = _book(conn, trip, _passenger(trip, "web", NAMES[who], f"+352600000{100 + who:03d}"), now, "confirmed")
+        out = _book(conn, trip, _passenger(trip, "web", NAMES[who], f"+352600000{100 + who:03d}"), "confirmed")
         if out:
             conn.execute("UPDATE booking SET created_at = %s WHERE id = %s",
                          (clock.at(day, time(8, 0)) - timedelta(days=2), out.booking_id))

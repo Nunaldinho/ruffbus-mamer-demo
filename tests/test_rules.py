@@ -59,22 +59,32 @@ def test_validation_errors():
                                now, for_booking=False) == {}
 
 
-def test_minimum_notice():
-    almost = MONDAY.replace(hour=9, minute=40)
+def test_minimum_notice_is_one_hour():
+    almost = MONDAY.replace(hour=9, minute=10)
     assert rules.validate_trip(trip_in(time="10:00"), almost, for_booking=True)["when"] == "errLead"
     assert rules.validate_trip(trip_in(time="10:15"), almost, for_booking=True) == {}
 
 
-def test_public_holiday_is_refused_and_skipped_in_repeats():
+def test_public_holiday_is_refused_even_among_several_days():
     christmas_week = datetime(2026, 12, 21, 8, 0, tzinfo=clock.TZ)
     single = trip_in(date="2026-12-25", time="10:00")
     assert rules.validate_trip(single, christmas_week, for_booking=True)["when"] == "errHoliday"
-    weekly = trip_in(date="2026-12-21", time="10:00", repeat_weekdays=[4, 5], repeat_weeks=2)  # Thursdays, Fridays
-    days, skipped = rules.occurrence_dates(weekly, christmas_week)
-    assert days == [date(2026, 12, 24), date(2026, 12, 31)]
-    assert skipped == [date(2026, 12, 25), date(2027, 1, 1)]
-    legs, _ = rules.legs_for(weekly, christmas_week)
-    assert len(legs) == 2
+    several = trip_in(date="2026-12-23", more_dates=["2026-12-24", "2026-12-25"], time="10:00")
+    assert rules.validate_trip(several, christmas_week, for_booking=True)["when"] == "errHoliday"
+
+
+def test_the_same_trip_on_up_to_three_days_within_the_window():
+    ok = trip_in(more_dates=["2026-11-27", "2026-11-25"])            # Mon 23, Wed 25, Fri 27, in any order
+    assert rules.validate_trip(ok, MONDAY, for_booking=True) == {}
+    assert rules.trip_days(ok) == [date(2026, 11, 23), date(2026, 11, 25), date(2026, 11, 27)]
+    assert len(rules.legs_for(ok.model_copy(update={"return_time": "12:00"}))) == 6
+    assert rules.trip_days(trip_in(more_dates=["2026-11-23"])) == [date(2026, 11, 23)]  # a day counts once
+    four = trip_in(more_dates=["2026-11-24", "2026-11-25", "2026-11-26"])
+    assert rules.validate_trip(four, MONDAY, for_booking=True)["when"] == "errMaxDays"
+    too_far = trip_in(more_dates=["2026-12-01"])                      # 8 days ahead
+    assert rules.validate_trip(too_far, MONDAY, for_booking=True)["when"] == "errWindow"
+    early = trip_in(time="09:00", more_dates=["2026-11-24"])          # today's ride needs an hour's notice too
+    assert rules.validate_trip(early, MONDAY.replace(minute=30), for_booking=True)["when"] == "errLead"
 
 
 def test_busy_window_covers_approach_ride_and_set_down():

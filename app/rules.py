@@ -44,9 +44,10 @@ NEEDS = ("seat", "stroller", "wheel", "bags")
 FIRST_PICKUP = time(9, 0)      # service 9:00–18:00
 LAST_PICKUP = time(17, 45)
 SLOT_STEP_MIN = 15
-LEAD_MIN = 30                  # ASSUMPTION: book at least 30 minutes ahead (as Ruffbus Syrdall)
+LEAD_MIN = 60                  # Mamer flyer: book at least 1 hour before departure
 WINDOW_DAYS = 7                # ASSUMPTION: book at most 7 days ahead (as Ruffbus Syrdall)
-STANDING_WEEKS_MAX = 4         # proposal: weekly repeats for up to 4 weeks
+DAYS_MAX = 3                   # proposal: the same trip on up to 3 of the bookable days
+RETURN_GAP_MIN = 30            # ASSUMPTION: a return pick-up at least 30 minutes after the outward one
 SEATS = 8
 APPROACH_MIN = 10              # ASSUMPTION: minutes for the bus to reach the passenger
 DWELL_MIN = 5                  # ASSUMPTION: minutes to board and set down
@@ -113,7 +114,7 @@ def bookable_times(day: date, now: datetime, after: time | None = None) -> list[
         at = clock.at(day, t)
         if at < earliest:
             continue
-        if after is not None and at < clock.at(day, after) + timedelta(minutes=LEAD_MIN):
+        if after is not None and at < clock.at(day, after) + timedelta(minutes=RETURN_GAP_MIN):
             continue
         out.append(t)
     return out
@@ -166,39 +167,27 @@ class Leg:
     end: datetime
 
 
-def occurrence_dates(trip: TripIn, now: datetime) -> tuple[list[date], list[date]]:
-    """Days the booking covers, and holidays skipped."""
+def trip_days(trip: TripIn) -> list[date]:
+    """The days a booking covers: its first day plus any extra days, in order, each once."""
     if trip.date is None:
-        return [], []
-    if not trip.repeat_weekdays:
-        return [trip.date], []
-    wanted = set(trip.repeat_weekdays)
-    days, skipped = [], []
-    first_time = parse_hhmm(trip.time) if trip.time else None
-    for i in range(trip.repeat_weeks * 7):
-        d = trip.date + timedelta(days=i)
-        if d.isoweekday() not in wanted:
-            continue
-        if i == 0 and first_time and first_time not in bookable_times(d, now):
-            continue
-        (skipped if is_holiday(d) else days).append(d)
-    return days, skipped
+        return []
+    return sorted({trip.date, *trip.more_dates})
 
 
-def legs_for(trip: TripIn, now: datetime) -> tuple[list[Leg], list[date]]:
-    days, skipped = occurrence_dates(trip, now)
+def legs_for(trip: TripIn) -> list[Leg]:
+    """One ride per day, two with a return trip. Each ride is later placed on a bus on its own."""
     legs: list[Leg] = []
     if not trip.time:
-        return legs, skipped
+        return legs
     out_min = ride_minutes(trip.pickup, trip.dropoff)
     back_min = ride_minutes(trip.dropoff, trip.pickup)
-    for d in days:
+    for d in trip_days(trip):
         p = clock.at(d, parse_hhmm(trip.time))
         legs.append(Leg(d, "out", p, out_min, *busy_window(p, out_min)))
         if trip.return_time:
             r = clock.at(d, parse_hhmm(trip.return_time))
             legs.append(Leg(d, "return", r, back_min, *busy_window(r, back_min)))
-    return legs, skipped
+    return legs
 
 
 # --- validation -----------------------------------------------------------------------------------
@@ -244,27 +233,26 @@ def validate_trip(trip: TripIn, now: datetime, *, for_booking: bool) -> dict[str
         elif place_label(a.locality, a.street, a.dest).lower() == place_label(b.locality, b.street, b.dest).lower():
             errors["dropoff"] = "errSame"
 
+    days, allowed = trip_days(trip), set(window(now))
     if trip.date is None:
         errors["when"] = "errDay"
-    elif trip.date not in window(now):
+    elif len(days) > DAYS_MAX:
+        errors["when"] = "errMaxDays"
+    elif any(d not in allowed for d in days):
         errors["when"] = "errWindow"
-    elif is_holiday(trip.date) and not trip.repeat_weekdays:
+    elif any(is_holiday(d) for d in days):
         errors["when"] = "errHoliday"
     elif not trip.time:
         errors["when"] = "errTime"
     elif parse_hhmm(trip.time) not in pickup_times():
         errors["when"] = "errTime"
-    elif not trip.repeat_weekdays and parse_hhmm(trip.time) not in bookable_times(trip.date, now):
+    elif any(parse_hhmm(trip.time) not in bookable_times(d, now) for d in days):
         errors["when"] = "errLead"
     elif trip.return_time and (
             parse_hhmm(trip.return_time) not in pickup_times()
             or clock.at(trip.date, parse_hhmm(trip.return_time))
-            < clock.at(trip.date, parse_hhmm(trip.time)) + timedelta(minutes=LEAD_MIN)):
+            < clock.at(trip.date, parse_hhmm(trip.time)) + timedelta(minutes=RETURN_GAP_MIN)):
         errors["when"] = "errRet"
-    elif trip.repeat_weekdays and (any(w < 1 or w > 7 for w in trip.repeat_weekdays)):
-        errors["when"] = "errDays"
-    elif trip.repeat_weekdays and not occurrence_dates(trip, now)[0]:
-        errors["when"] = "errDays"
 
     if trip.adults + trip.children > SEATS:
         errors["who"] = "errSeats"

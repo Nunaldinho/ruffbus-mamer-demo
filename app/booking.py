@@ -56,7 +56,6 @@ class Outcome:
     ref: str | None
     booked: list[dict]
     failed: list[Leg]
-    skipped: list[date]
 
 
 # --- finding a bus -----------------------------------------------------------------------------
@@ -146,7 +145,7 @@ def _log_turned_away(conn, p: Passenger, legs: list[Leg]) -> None:
                         (leg.pickup_at, rules.area(a), rules.area(b), p.adults + p.children, p.channel))
 
 
-def book(conn: psycopg.Connection, p: Passenger, legs: list[Leg], skipped: list[date], *,
+def book(conn: psycopg.Connection, p: Passenger, legs: list[Leg], *,
          status: str = "requested", accept_partial: bool = True, dry_run: bool = False,
          actor: Actor | None = None) -> Outcome:
     """Create a booking and put each ride on a free bus, all in one transaction.
@@ -184,7 +183,7 @@ def book(conn: psycopg.Connection, p: Passenger, legs: list[Leg], skipped: list[
                                rides=len(booked))
     if not dry_run:
         _log_turned_away(conn, p, failed)
-    return Outcome(None if dry_run else booking_id, None if dry_run else ref, booked, failed, skipped)
+    return Outcome(None if dry_run else booking_id, None if dry_run else ref, booked, failed)
 
 
 def _leg_json(leg: Leg) -> dict:
@@ -193,15 +192,12 @@ def _leg_json(leg: Leg) -> dict:
 
 # --- availability shown in the booking form ------------------------------------------------------
 def availability(cur, trip, now: datetime) -> dict:
-    """For each pickup time: how many buses are free (and on how many of the repeat days)."""
+    """For each pickup time: buses free on the busiest chosen day, and on how many chosen days a bus is free."""
     kind = getattr(trip, "kind", "out")
     a, b = (trip.pickup, trip.dropoff) if kind == "out" else (trip.dropoff, trip.pickup)
     minutes = rules.ride_minutes(a, b)
-    if trip.date is None or (kind == "return" and not trip.time):
-        return {"ride_minutes": minutes, "slots": []}
-    probe = trip.model_copy(update={"time": None})
-    days, _ = rules.occurrence_dates(probe, now)
-    if not days:
+    days = rules.trip_days(trip)
+    if not days or (kind == "return" and not trip.time):
         return {"ride_minutes": minutes, "slots": []}
     after = rules.parse_hhmm(trip.time) if kind == "return" else None
     bookable = {d: set(rules.bookable_times(d, now, after)) for d in days}
@@ -226,12 +222,11 @@ def availability(cur, trip, now: datetime) -> dict:
 
     slots = []
     for t in rules.pickup_times():
-        considered = [d for d in days if t in bookable[d]]
-        if not considered:
-            continue
-        counts = [free_count(*rules.busy_window(clock.at(d, t), minutes)) for d in considered]
+        if any(t not in bookable[d] for d in days):
+            continue                      # a time is offered only if it can be booked on every chosen day
+        counts = [free_count(*rules.busy_window(clock.at(d, t), minutes)) for d in days]
         slots.append({"time": rules.hhmm(t), "free": min(counts),
-                      "days_ok": sum(1 for c in counts if c > 0), "days": len(considered)})
+                      "days_ok": sum(1 for c in counts if c > 0), "days": len(days)})
     return {"ride_minutes": minutes, "slots": slots}
 
 

@@ -9,12 +9,12 @@ en: {
   stopPickup: "Pick-up", stopDropoff: "Drop-off", stopWhen: "When", stopWho: "Who’s travelling", stopContact: "Your details",
   inCommune: "In the commune", listedDest: "Outside the commune", locality: "Village", street: "Street and number", streetPh: "e.g. 7A route de Capellen",
   destination: "Destination", chooseDest: "Choose a destination", outsideHint: "Outside the commune, the Ruffbus only serves the places on this list, and only for residents.",
-  date: "Day", hoursHint: (l, d) => `Book at least ${l} minutes and up to ${d} days ahead. No service on public holidays.`,
+  date: "Day", hoursHint: (l, d) => `Book at least ${l % 60 ? l + " minutes" : l / 60 + (l === 60 ? " hour" : " hours")} and up to ${d} days ahead. No service on public holidays.`,
   time: "Pick-up time", chooseTime: "Choose a time", loadingTimes: "Checking free buses…", tomorrow: "Tomorrow", todayShort: "Today", holiday: "Holiday",
   slotFree: n => n === 1 ? "1 bus free" : n + " buses free", slotFull: "full", slotDays: (a, b) => `free on ${a} of ${b} days`,
   fullHint: "Times marked full have no minibus free. Choose another time or call 2810 831.",
-  returnTrip: "Add a return trip", returnTime: "Return pick-up time", repeat: "Repeat every week", repeatDays: "On these days", repeatWeeks: "For how long",
-  weeksN: n => n + (n > 1 ? " weeks" : " week"), repeatHint: "Handy for regular trips, like a crèche pick-up. Public holidays are skipped.",
+  returnTrip: "Add a return trip", returnTime: "Return pick-up time",
+  multiDays: "Book several days", multiHint: n => `Choose up to ${n} days: same trip, same times.`, inAll: "In all",
   adults: "Adults", children: "Children under 13", childrenNote: "Children under 13 travel with an adult. Children up to 12 ride free.",
   needs: "Anything the driver should know?", needsNote: "Only used to send a suitable minibus, and deleted with the booking.",
   need_seat: "Child car seat", need_stroller: "Pushchair", need_wheel: "Wheelchair", need_bags: "Shopping trolley",
@@ -31,7 +31,7 @@ en: {
   errPick: "Choose where to pick you up.", errDrop: "Choose where you’re going.", errStreet: "Enter the street and number.", errDest: "Choose a destination from the list.",
   errOutside: "One end of the trip must be in Mamer, Capellen or Holzem.", errSame: "Pick-up and drop-off are the same place.",
   errDay: "Choose a day.", errWindow: "Choose a day in the next 7 days.", errHoliday: "No service on public holidays.", errTime: "Choose a pick-up time.",
-  errLead: "Book at least 30 minutes ahead.", errRet: "Choose a return time at least 30 minutes after the pick-up.", errDays: "Choose at least one day.",
+  errLead: "Book at least 1 hour ahead.", errRet: "Choose a return time at least 30 minutes after the pick-up.", errMaxDays: "Choose up to 3 days.",
   errSeats: "The minibus has 8 seats.", errAdult: "Children under 13 need an adult with them.", errRes: "Confirm you live in the commune to travel outside it.",
   errName: "Enter your name.", errPhone: "Enter a mobile number that can receive texts.", errCode: "That code is not right. Check the text message and try again.",
   errCodeExpired: "That code has expired or was tried too often. Ask for a new one.", errTooMany: "Too many codes requested. Wait 15 minutes and try again.",
@@ -42,7 +42,7 @@ en: {
   partialAsk: (n, t) => `${n} of ${t} rides can’t be booked: no minibus is free then.`, bookRest: "Book the others", changeTimes: "Change times",
   doneTitle: "Ride requested", doneSub: "Your request is in the call centre’s queue. You get a text message when each ride is confirmed.",
   doneDemo: "Prototype: text messages are simulated. Open the staff screen to see your request arrive.",
-  ref: "Reference", skipped: "public holiday, skipped", notBooked: "Not booked, no minibus free", bookAnother: "Book another ride", seeMine: "See my rides",
+  ref: "Reference", notBooked: "Not booked, no minibus free", bookAnother: "Book another ride", seeMine: "See my rides",
   mineTitle: "My rides", mineEmpty: "No rides yet. Book one and it appears here.", mineLogin: "Sign in with your mobile number to see and cancel your rides.",
   cancel: "Cancel ride", cancelAsk: "Cancel this ride?", cancelledMsg: "Ride cancelled.",
   st_requested: "Requested", st_confirmed: "Confirmed", st_declined: "Declined", st_cancelled: "Cancelled", out: "Outbound", ret: "Return",
@@ -60,12 +60,12 @@ fr: {
   stopPickup: "Départ", stopDropoff: "Arrivée", stopWhen: "Quand", stopWho: "Qui voyage", stopContact: "Vos coordonnées",
   inCommune: "Dans la commune", listedDest: "Hors commune", locality: "Localité", street: "Rue et numéro", streetPh: "p. ex. 7A route de Capellen",
   destination: "Destination", chooseDest: "Choisissez une destination", outsideHint: "Hors de la commune, le Ruffbus ne dessert que les lieux de cette liste, et uniquement pour les habitants.",
-  date: "Jour", hoursHint: (l, d) => `Réservez au moins ${l} minutes et au plus ${d} jours à l’avance. Pas de service les jours fériés.`,
+  date: "Jour", hoursHint: (l, d) => `Réservez au moins ${l % 60 ? l + " minutes" : l / 60 + (l === 60 ? " heure" : " heures")} et au plus ${d} jours à l’avance. Pas de service les jours fériés.`,
   time: "Heure de prise en charge", chooseTime: "Choisissez une heure", loadingTimes: "Recherche des bus libres…", tomorrow: "Demain", todayShort: "Auj.", holiday: "Férié",
   slotFree: n => n + " bus libre" + (n > 1 ? "s" : ""), slotFull: "complet", slotDays: (a, b) => `libre ${a} jours sur ${b}`,
   fullHint: "Les horaires « complet » n’ont plus de minibus libre. Choisissez une autre heure ou appelez le 2810 831.",
-  returnTrip: "Ajouter un retour", returnTime: "Heure du retour", repeat: "Répéter chaque semaine", repeatDays: "Ces jours-là", repeatWeeks: "Pendant",
-  weeksN: n => n + " semaine" + (n > 1 ? "s" : ""), repeatHint: "Pratique pour les trajets réguliers, comme aller chercher un enfant à la crèche. Les jours fériés sont sautés.",
+  returnTrip: "Ajouter un retour", returnTime: "Heure du retour",
+  multiDays: "Réserver plusieurs jours", multiHint: n => `Choisissez jusqu’à ${n} jours : même trajet, mêmes horaires.`, inAll: "En tout",
   adults: "Adultes", children: "Enfants de moins de 13 ans", childrenNote: "Les enfants de moins de 13 ans voyagent avec un adulte. Gratuit pour les enfants jusqu’à 12 ans.",
   needs: "Quelque chose à signaler au chauffeur ?", needsNote: "Sert uniquement à envoyer un minibus adapté, et supprimé avec la réservation.",
   need_seat: "Siège enfant", need_stroller: "Poussette", need_wheel: "Fauteuil roulant", need_bags: "Caddie de courses",
@@ -82,7 +82,7 @@ fr: {
   errPick: "Indiquez où venir vous chercher.", errDrop: "Indiquez où vous allez.", errStreet: "Indiquez la rue et le numéro.", errDest: "Choisissez une destination de la liste.",
   errOutside: "Le départ ou l’arrivée doit se trouver à Mamer, Capellen ou Holzem.", errSame: "Le départ et l’arrivée sont identiques.",
   errDay: "Choisissez un jour.", errWindow: "Choisissez un jour dans les 7 prochains jours.", errHoliday: "Pas de service les jours fériés.", errTime: "Choisissez une heure.",
-  errLead: "Réservez au moins 30 minutes à l’avance.", errRet: "Choisissez un retour au moins 30 minutes après le départ.", errDays: "Choisissez au moins un jour.",
+  errLead: "Réservez au moins 1 heure à l’avance.", errRet: "Choisissez un retour au moins 30 minutes après le départ.", errMaxDays: "Choisissez au plus 3 jours.",
   errSeats: "Le minibus compte 8 places.", errAdult: "Les enfants de moins de 13 ans doivent être accompagnés d’un adulte.", errRes: "Confirmez que vous habitez la commune pour sortir de la commune.",
   errName: "Indiquez votre nom.", errPhone: "Indiquez un numéro de portable pouvant recevoir des SMS.", errCode: "Ce code n’est pas le bon. Vérifiez le SMS et réessayez.",
   errCodeExpired: "Ce code a expiré ou a été essayé trop souvent. Demandez-en un nouveau.", errTooMany: "Trop de codes demandés. Attendez 15 minutes et réessayez.",
@@ -94,7 +94,7 @@ fr: {
   bookRest: "Réserver les autres", changeTimes: "Changer les heures",
   doneTitle: "Course demandée", doneSub: "Votre demande est dans la file de la centrale. Vous recevez un SMS dès que chaque course est confirmée.",
   doneDemo: "Prototype : les SMS sont simulés. Ouvrez l’écran de la centrale pour voir arriver votre demande.",
-  ref: "Référence", skipped: "jour férié, sauté", notBooked: "Non réservé, aucun minibus libre", bookAnother: "Réserver une autre course", seeMine: "Voir mes courses",
+  ref: "Référence", notBooked: "Non réservé, aucun minibus libre", bookAnother: "Réserver une autre course", seeMine: "Voir mes courses",
   mineTitle: "Mes courses", mineEmpty: "Aucune course pour l’instant. Réservez-en une et elle s’affichera ici.", mineLogin: "Connectez-vous avec votre numéro de portable pour voir et annuler vos courses.",
   cancel: "Annuler la course", cancelAsk: "Annuler cette course ?", cancelledMsg: "Course annulée.",
   st_requested: "Demandée", st_confirmed: "Confirmée", st_declined: "Refusée", st_cancelled: "Annulée", out: "Aller", ret: "Retour",
@@ -112,12 +112,12 @@ de: {
   stopPickup: "Abholung", stopDropoff: "Ziel", stopWhen: "Wann", stopWho: "Wer fährt mit", stopContact: "Ihre Angaben",
   inCommune: "In der Gemeinde", listedDest: "Außerhalb der Gemeinde", locality: "Ortschaft", street: "Straße und Hausnummer", streetPh: "z. B. 7A route de Capellen",
   destination: "Ziel", chooseDest: "Ziel wählen", outsideHint: "Außerhalb der Gemeinde fährt der Rufbus nur die Orte dieser Liste an, und nur für Einwohner.",
-  date: "Tag", hoursHint: (l, d) => `Mindestens ${l} Minuten und höchstens ${d} Tage im Voraus buchen. Kein Betrieb an Feiertagen.`,
+  date: "Tag", hoursHint: (l, d) => `Mindestens ${l % 60 ? l + " Minuten" : l / 60 + (l === 60 ? " Stunde" : " Stunden")} und höchstens ${d} Tage im Voraus buchen. Kein Betrieb an Feiertagen.`,
   time: "Abholzeit", chooseTime: "Uhrzeit wählen", loadingTimes: "Freie Busse werden gesucht…", tomorrow: "Morgen", todayShort: "Heute", holiday: "Feiertag",
   slotFree: n => n + (n === 1 ? " Bus frei" : " Busse frei"), slotFull: "voll", slotDays: (a, b) => `an ${a} von ${b} Tagen frei`,
   fullHint: "Bei „voll“ ist kein Minibus frei. Wählen Sie eine andere Zeit oder rufen Sie 2810 831 an.",
-  returnTrip: "Rückfahrt hinzufügen", returnTime: "Abholzeit Rückfahrt", repeat: "Jede Woche wiederholen", repeatDays: "An diesen Tagen", repeatWeeks: "Für",
-  weeksN: n => n + (n > 1 ? " Wochen" : " Woche"), repeatHint: "Praktisch für regelmäßige Fahrten, etwa die Abholung aus der Krippe. Feiertage werden übersprungen.",
+  returnTrip: "Rückfahrt hinzufügen", returnTime: "Abholzeit Rückfahrt",
+  multiDays: "Mehrere Tage buchen", multiHint: n => `Bis zu ${n} Tage wählen: gleiche Fahrt, gleiche Zeiten.`, inAll: "Insgesamt",
   adults: "Erwachsene", children: "Kinder unter 13", childrenNote: "Kinder unter 13 fahren mit einem Erwachsenen. Bis 12 Jahre kostenlos.",
   needs: "Muss der Fahrer etwas wissen?", needsNote: "Nur dafür, einen passenden Minibus zu schicken; wird mit der Buchung gelöscht.",
   need_seat: "Kindersitz", need_stroller: "Kinderwagen", need_wheel: "Rollstuhl", need_bags: "Einkaufstrolley",
@@ -134,7 +134,7 @@ de: {
   errPick: "Wählen Sie den Abholort.", errDrop: "Wählen Sie das Ziel.", errStreet: "Geben Sie Straße und Hausnummer ein.", errDest: "Wählen Sie ein Ziel aus der Liste.",
   errOutside: "Abholort oder Ziel muss in Mamer, Capellen oder Holzem liegen.", errSame: "Abholort und Ziel sind gleich.",
   errDay: "Wählen Sie einen Tag.", errWindow: "Wählen Sie einen Tag in den nächsten 7 Tagen.", errHoliday: "Kein Betrieb an Feiertagen.", errTime: "Wählen Sie eine Abholzeit.",
-  errLead: "Buchen Sie mindestens 30 Minuten im Voraus.", errRet: "Die Rückfahrt muss mindestens 30 Minuten nach der Abholung liegen.", errDays: "Wählen Sie mindestens einen Tag.",
+  errLead: "Buchen Sie mindestens 1 Stunde im Voraus.", errRet: "Die Rückfahrt muss mindestens 30 Minuten nach der Abholung liegen.", errMaxDays: "Wählen Sie höchstens 3 Tage.",
   errSeats: "Der Minibus hat 8 Plätze.", errAdult: "Kinder unter 13 brauchen eine erwachsene Begleitperson.", errRes: "Bestätigen Sie, dass Sie in der Gemeinde wohnen.",
   errName: "Geben Sie Ihren Namen ein.", errPhone: "Geben Sie eine Handynummer für SMS ein.", errCode: "Der Code stimmt nicht. Prüfen Sie die SMS und versuchen Sie es erneut.",
   errCodeExpired: "Der Code ist abgelaufen oder wurde zu oft versucht. Fordern Sie einen neuen an.", errTooMany: "Zu viele Codes angefordert. Warten Sie 15 Minuten.",
@@ -145,7 +145,7 @@ de: {
   partialAsk: (n, t) => `${n} von ${t} Fahrten können nicht gebucht werden: Dann ist kein Minibus frei.`, bookRest: "Die anderen buchen", changeTimes: "Zeiten ändern",
   doneTitle: "Fahrt angefragt", doneSub: "Ihre Anfrage liegt bei der Zentrale. Sie erhalten eine SMS, sobald jede Fahrt bestätigt ist.",
   doneDemo: "Prototyp: SMS werden simuliert. Öffnen Sie die Ansicht der Zentrale, um Ihre Anfrage zu sehen.",
-  ref: "Referenz", skipped: "Feiertag, übersprungen", notBooked: "Nicht gebucht, kein Minibus frei", bookAnother: "Weitere Fahrt buchen", seeMine: "Meine Fahrten ansehen",
+  ref: "Referenz", notBooked: "Nicht gebucht, kein Minibus frei", bookAnother: "Weitere Fahrt buchen", seeMine: "Meine Fahrten ansehen",
   mineTitle: "Meine Fahrten", mineEmpty: "Noch keine Fahrten. Buchen Sie eine, dann erscheint sie hier.", mineLogin: "Melden Sie sich mit Ihrer Handynummer an, um Ihre Fahrten zu sehen und zu stornieren.",
   cancel: "Fahrt stornieren", cancelAsk: "Diese Fahrt stornieren?", cancelledMsg: "Fahrt storniert.",
   st_requested: "Angefragt", st_confirmed: "Bestätigt", st_declined: "Abgelehnt", st_cancelled: "Storniert", out: "Hinfahrt", ret: "Rückfahrt",
@@ -163,12 +163,12 @@ pt: {
   stopPickup: "Partida", stopDropoff: "Chegada", stopWhen: "Quando", stopWho: "Quem viaja", stopContact: "Os seus contactos",
   inCommune: "Na comuna", listedDest: "Fora da comuna", locality: "Localidade", street: "Rua e número", streetPh: "p. ex. 7A route de Capellen",
   destination: "Destino", chooseDest: "Escolha um destino", outsideHint: "Fora da comuna, o Ruffbus só serve os locais desta lista, e apenas para residentes.",
-  date: "Dia", hoursHint: (l, d) => `Reserve com pelo menos ${l} minutos e no máximo ${d} dias de antecedência. Sem serviço aos feriados.`,
+  date: "Dia", hoursHint: (l, d) => `Reserve com pelo menos ${l % 60 ? l + " minutos" : l / 60 + (l === 60 ? " hora" : " horas")} e no máximo ${d} dias de antecedência. Sem serviço aos feriados.`,
   time: "Hora de recolha", chooseTime: "Escolha uma hora", loadingTimes: "A procurar autocarros livres…", tomorrow: "Amanhã", todayShort: "Hoje", holiday: "Feriado",
   slotFree: n => n + (n === 1 ? " autocarro livre" : " autocarros livres"), slotFull: "lotado", slotDays: (a, b) => `livre em ${a} de ${b} dias`,
   fullHint: "Nas horas «lotado» não há minibus livre. Escolha outra hora ou ligue para o 2810 831.",
-  returnTrip: "Adicionar regresso", returnTime: "Hora do regresso", repeat: "Repetir todas as semanas", repeatDays: "Nestes dias", repeatWeeks: "Durante",
-  weeksN: n => n + (n > 1 ? " semanas" : " semana"), repeatHint: "Útil para viagens regulares, como ir buscar uma criança à creche. Os feriados são saltados.",
+  returnTrip: "Adicionar regresso", returnTime: "Hora do regresso",
+  multiDays: "Reservar vários dias", multiHint: n => `Escolha até ${n} dias: a mesma viagem, os mesmos horários.`, inAll: "No total",
   adults: "Adultos", children: "Crianças com menos de 13 anos", childrenNote: "Crianças com menos de 13 anos viajam com um adulto. Grátis até aos 12 anos.",
   needs: "Algo que o motorista deva saber?", needsNote: "Só serve para enviar um minibus adequado e é apagado com a reserva.",
   need_seat: "Cadeira de criança", need_stroller: "Carrinho de bebé", need_wheel: "Cadeira de rodas", need_bags: "Carrinho de compras",
@@ -185,7 +185,7 @@ pt: {
   errPick: "Indique onde o vamos buscar.", errDrop: "Indique para onde vai.", errStreet: "Indique a rua e o número.", errDest: "Escolha um destino da lista.",
   errOutside: "A partida ou a chegada tem de ser em Mamer, Capellen ou Holzem.", errSame: "A partida e a chegada são o mesmo local.",
   errDay: "Escolha um dia.", errWindow: "Escolha um dia nos próximos 7 dias.", errHoliday: "Sem serviço aos feriados.", errTime: "Escolha uma hora.",
-  errLead: "Reserve com pelo menos 30 minutos de antecedência.", errRet: "O regresso tem de ser pelo menos 30 minutos depois da partida.", errDays: "Escolha pelo menos um dia.",
+  errLead: "Reserve com pelo menos 1 hora de antecedência.", errRet: "O regresso tem de ser pelo menos 30 minutos depois da partida.", errMaxDays: "Escolha no máximo 3 dias.",
   errSeats: "O minibus tem 8 lugares.", errAdult: "Crianças com menos de 13 anos têm de ir com um adulto.", errRes: "Confirme que mora na comuna para viajar para fora dela.",
   errName: "Indique o seu nome.", errPhone: "Indique um telemóvel que receba SMS.", errCode: "Esse código não está certo. Verifique o SMS e tente de novo.",
   errCodeExpired: "O código expirou ou foi tentado vezes demais. Peça um novo.", errTooMany: "Pediu códigos demais. Espere 15 minutos e tente de novo.",
@@ -196,7 +196,7 @@ pt: {
   partialAsk: (n, t) => `${n} de ${t} viagens não podem ser reservadas: nenhum minibus está livre.`, bookRest: "Reservar as outras", changeTimes: "Mudar as horas",
   doneTitle: "Viagem pedida", doneSub: "O seu pedido está na fila da central. Recebe um SMS quando cada viagem for confirmada.",
   doneDemo: "Protótipo: os SMS são simulados. Abra o ecrã da central para ver o seu pedido chegar.",
-  ref: "Referência", skipped: "feriado, saltado", notBooked: "Não reservado, nenhum minibus livre", bookAnother: "Reservar outra viagem", seeMine: "Ver as minhas viagens",
+  ref: "Referência", notBooked: "Não reservado, nenhum minibus livre", bookAnother: "Reservar outra viagem", seeMine: "Ver as minhas viagens",
   mineTitle: "As minhas viagens", mineEmpty: "Ainda sem viagens. Reserve uma e ela aparece aqui.", mineLogin: "Inicie sessão com o seu telemóvel para ver e cancelar as suas viagens.",
   cancel: "Cancelar viagem", cancelAsk: "Cancelar esta viagem?", cancelledMsg: "Viagem cancelada.",
   st_requested: "Pedida", st_confirmed: "Confirmada", st_declined: "Recusada", st_cancelled: "Cancelada", out: "Ida", ret: "Regresso",
@@ -283,8 +283,8 @@ en: `<h1>About this prototype</h1>
 <li>Data protection is built in: only what is needed is collected, old bookings are anonymised automatically, residents can download or delete their data, every change is logged, and the commune sees anonymous figures only.</li></ul>
 <h2>What is simulated</h2><ul><li>Text messages are not sent; they appear in the staff screen. A live service would use the operator’s SMS gateway.</li><li>The sample rides and names are invented.</li></ul>
 <h2>Assumptions to check with the commune</h2><ul>
-<li>Bookings at least 30 minutes and up to 7 days ahead, as in other Ruffbus services. The Mamer flyer doesn’t state these limits.</li>
-<li>Weekly repeat bookings are a suggestion, not a current rule.</li>
+<li>Bookings up to 7 days ahead, as in other Ruffbus services. The Mamer flyer only says to book at least 1 hour before departure.</li>
+<li>Booking the same trip on up to 3 days at once is a suggestion, not a current rule.</li>
 <li>Ride times are estimated by zone, plus 10 minutes to reach the passenger and 5 to board and set down. Each booking uses a whole minibus.</li></ul>`,
 fr: `<h1>À propos du prototype</h1>
 <p>Aujourd’hui, le Ruffbus Gemeng Mamer se réserve uniquement par téléphone. Ce prototype montre comment les habitants pourraient aussi réserver en ligne, et comment la centrale et la commune pourraient suivre toute la flotte.</p>
@@ -296,8 +296,8 @@ fr: `<h1>À propos du prototype</h1>
 <li>La protection des données est intégrée : seules les données nécessaires sont collectées, les anciennes réservations sont anonymisées automatiquement, chaque habitant peut télécharger ou supprimer ses données, chaque modification est journalisée, et la commune ne voit que des chiffres anonymes.</li></ul>
 <h2>Ce qui est simulé</h2><ul><li>Les SMS ne sont pas envoyés ; ils s’affichent dans l’écran de la centrale. Un vrai service utiliserait la passerelle SMS de l’exploitant.</li><li>Les courses et les noms d’exemple sont fictifs.</li></ul>
 <h2>Hypothèses à vérifier avec la commune</h2><ul>
-<li>Réservation au moins 30 minutes et au plus 7 jours à l’avance, comme pour d’autres services Ruffbus. Le dépliant de Mamer ne précise pas ces délais.</li>
-<li>Les réservations hebdomadaires sont une proposition, pas une règle actuelle.</li>
+<li>Réservation au plus 7 jours à l’avance, comme pour d’autres services Ruffbus. Le dépliant de Mamer indique seulement de réserver au moins 1 heure avant le départ.</li>
+<li>Réserver le même trajet sur 3 jours au plus en une fois est une proposition, pas une règle actuelle.</li>
 <li>Durées estimées par zone, plus 10 minutes pour rejoindre le passager et 5 pour monter et descendre. Chaque réservation occupe un minibus entier.</li></ul>`,
 de: `<h1>Über den Prototyp</h1>
 <p>Heute wird der Ruffbus Gemeng Mamer nur telefonisch gebucht. Dieser Prototyp zeigt, wie Einwohner auch online buchen könnten und wie Zentrale und Gemeinde die ganze Flotte im Blick behalten.</p>
@@ -309,8 +309,8 @@ de: `<h1>Über den Prototyp</h1>
 <li>Datenschutz ist eingebaut: nur nötige Daten, automatische Anonymisierung alter Buchungen, Herunterladen und Löschen für Einwohner, Protokoll jeder Änderung, und die Gemeinde sieht nur anonyme Zahlen.</li></ul>
 <h2>Was simuliert ist</h2><ul><li>SMS werden nicht verschickt; sie erscheinen in der Ansicht der Zentrale. Ein echter Dienst würde das SMS-Gateway des Betreibers nutzen.</li><li>Die Beispielfahrten und Namen sind erfunden.</li></ul>
 <h2>Annahmen, die mit der Gemeinde zu klären sind</h2><ul>
-<li>Buchung mindestens 30 Minuten und höchstens 7 Tage im Voraus, wie bei anderen Ruffbus-Diensten. Das Faltblatt aus Mamer nennt diese Fristen nicht.</li>
-<li>Wöchentliche Wiederholungen sind ein Vorschlag, keine aktuelle Regel.</li>
+<li>Buchung höchstens 7 Tage im Voraus, wie bei anderen Ruffbus-Diensten. Das Faltblatt aus Mamer sagt nur: mindestens 1 Stunde vor der Abfahrt buchen.</li>
+<li>Dieselbe Fahrt an bis zu 3 Tagen auf einmal zu buchen ist ein Vorschlag, keine aktuelle Regel.</li>
 <li>Fahrzeiten pro Zone geschätzt, plus 10 Minuten Anfahrt und 5 zum Ein- und Aussteigen. Jede Buchung belegt einen ganzen Minibus.</li></ul>`,
 pt: `<h1>Sobre o protótipo</h1>
 <p>Hoje, o Ruffbus Gemeng Mamer só se reserva por telefone. Este protótipo mostra como os moradores poderiam também reservar online, e como a central e a comuna poderiam acompanhar toda a frota.</p>
@@ -322,8 +322,8 @@ pt: `<h1>Sobre o protótipo</h1>
 <li>A proteção de dados vem de origem: só se recolhe o necessário, as reservas antigas são anonimizadas automaticamente, cada morador pode descarregar ou apagar os seus dados, cada alteração fica registada, e a comuna só vê números anónimos.</li></ul>
 <h2>O que é simulado</h2><ul><li>Os SMS não são enviados; aparecem no ecrã da central. Um serviço real usaria a plataforma de SMS do operador.</li><li>As viagens e os nomes de exemplo são fictícios.</li></ul>
 <h2>Pressupostos a confirmar com a comuna</h2><ul>
-<li>Reserva com pelo menos 30 minutos e no máximo 7 dias de antecedência, como noutros serviços Ruffbus. O folheto de Mamer não indica estes prazos.</li>
-<li>As reservas semanais são uma proposta, não uma regra atual.</li>
+<li>Reserva com no máximo 7 dias de antecedência, como noutros serviços Ruffbus. O folheto de Mamer só indica reservar pelo menos 1 hora antes da partida.</li>
+<li>Reservar a mesma viagem em até 3 dias de uma vez é uma proposta, não uma regra atual.</li>
 <li>Durações estimadas por zona, mais 10 minutos para chegar ao passageiro e 5 para entrar e sair. Cada reserva ocupa um minibus inteiro.</li></ul>`,
 };
 

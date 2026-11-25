@@ -1,7 +1,7 @@
 /* Booking page for residents. All rules are checked again on the server; this only guides the user. */
 "use strict";
 (() => {
-const {$, $$, esc, parse, addDays, isoWeekday, fmtDay, fmtPhone, api, debounce, toast, getPref, setPref, groupDests} = RB;
+const {$, $$, esc, parse, fmtDay, fmtPhone, api, debounce, toast, getPref, setPref, groupDests} = RB;
 const LANGS = ["fr", "de", "en", "pt"];
 const STEPS = ["pickup", "dropoff", "when", "who", "me"];
 const NEEDS = ["seat", "stroller", "wheel", "bags"];
@@ -10,7 +10,8 @@ let lang = "fr", CFG = null, DEST = {}, ME = null, tab = "book", loadedAt = 0;
 const S = {
   pickup: {mode: "commune", locality: "Holzem", street: "", dest: ""},
   dropoff: {mode: "commune", locality: "Mamer", street: "", dest: ""},
-  date: null, time: null, ret: false, return_time: null, rep: false, wdays: [], weeks: 4,
+  dates: [], date: null, multi: false,     // chosen days in order; date = the first one
+  time: null, ret: false, return_time: null,
   adults: 1, children: 0, needs: [], name: "", phone: "", sms: true, resident: false,
 };
 let AV = {out: null, ret: null}, availSeq = 0;
@@ -39,9 +40,8 @@ const endpoint = e => e.mode === "commune"
   : {mode: "dest", dest: e.dest || null};
 function trip() {
   return {
-    pickup: endpoint(S.pickup), dropoff: endpoint(S.dropoff), date: S.date, time: S.time,
-    return_time: S.ret ? S.return_time : null,
-    repeat_weekdays: S.rep ? [...S.wdays].sort() : [], repeat_weeks: S.rep ? S.weeks : 1,
+    pickup: endpoint(S.pickup), dropoff: endpoint(S.dropoff), date: S.date, more_dates: S.dates.slice(1),
+    time: S.time, return_time: S.ret ? S.return_time : null,
     adults: S.adults, children: S.children, needs: S.needs, resident_declared: S.resident,
   };
 }
@@ -100,14 +100,30 @@ function endpointHTML(which) {
 function renderEndpoints() { $$(".endpoint").forEach(el => { el.innerHTML = endpointHTML(el.dataset.end); }); }
 
 function renderDays() {
+  const full = S.multi && S.dates.length >= CFG.rules.days_max;
   $("#days").innerHTML = CFG.days.map((d, i) => {
-    const off = d.holiday || (i === 0 && !todayHasSlots());
+    const on = S.dates.includes(d.date);
+    const off = d.holiday || (i === 0 && !todayHasSlots()) || (full && !on);
     const lab = i === 0 ? t("todayShort") : i === 1 ? t("tomorrow") : fmtDay(d.date, lang, {weekday: "short"});
-    return `<button type="button" class="day" data-date="${d.date}" aria-pressed="${S.date === d.date}" ${off ? "disabled" : ""}>
+    return `<button type="button" class="day" data-date="${d.date}" aria-pressed="${on}" ${off ? "disabled" : ""}>
       <span>${esc(lab)}</span><b>${parse(d.date).getDate()}</b><span>${esc(d.holiday ? t("holiday") : fmtDay(d.date, lang, {month: "short"}))}</span></button>`;
   }).join("");
   $("#hourshint").textContent = t("hoursHint", CFG.rules.lead_min, CFG.rules.window_days);
+  $("#multi").checked = S.multi;
+  $("#multihint").hidden = !S.multi;
+  $("#multihint").textContent = t("multiHint", CFG.rules.days_max);
 }
+/* One day by default; with "Book several days" ticked, each tap adds or removes a day, up to the maximum. */
+function setDates(list) { S.dates = [...new Set(list)].sort(); S.date = S.dates[0] || null; }
+function pickDay(day) {
+  if (!S.multi) setDates([day]);
+  else if (S.dates.includes(day)) setDates(S.dates.filter(x => x !== day));
+  else if (S.dates.length < CFG.rules.days_max) setDates([...S.dates, day]);
+  renderDays(); changed({avail: true});
+}
+const dayList = () => S.dates.length === 1
+  ? fmtDay(S.date, lang, {weekday: "long", day: "numeric", month: "long"})
+  : S.dates.map(d => fmtDay(d, lang, {weekday: "short", day: "numeric", month: "short"})).join(", ");
 
 function slotLabel(s) {
   if (s.days > 1) return s.time + " – " + (s.days_ok ? t("slotDays", s.days_ok, s.days) : t("slotFull"));
@@ -137,11 +153,6 @@ function renderTimes() {
   if (t0 !== S.time) loadPreview();
 }
 
-function renderRepeat() {
-  const monday = "2026-11-16";
-  $("#wdays").innerHTML = [1, 2, 3, 4, 5, 6, 7].map(wd => `<button type="button" class="chip" data-wd="${wd}" aria-pressed="${S.wdays.includes(wd)}">${esc(fmtDay(addDays(monday, wd - 1), lang, {weekday: "short"}))}</button>`).join("");
-  $("#weeks").innerHTML = [1, 2, 3, 4].filter(n => n <= CFG.rules.standing_weeks_max).map(n => `<option value="${n}" ${S.weeks === n ? "selected" : ""}>${esc(t("weeksN", n))}</option>`).join("");
-}
 function renderNeeds() {
   $("#needs").innerHTML = NEEDS.map(n => `<button type="button" class="chip" data-need="${n}" aria-pressed="${S.needs.includes(n)}">${esc(t("need_" + n))}</button>`).join("");
 }
@@ -186,7 +197,6 @@ function errors() {
   if (!S.date) E.when = "errDay";
   else if (!S.time) E.when = "errTime";
   else if (S.ret && !S.return_time) E.when = "errRet";
-  else if (S.rep && !S.wdays.length) E.when = "errDays";
   else if (PV && PV.ok && PV.rides === 0) E.when = "errFull";
   if (S.adults + S.children > CFG.rules.seats || S.adults + S.children < 1) E.who = "errSeats";
   else if (S.children > 0 && S.adults < 1) E.who = "errAdult";
@@ -224,13 +234,13 @@ function renderTicket() {
     <div class="leg"><i></i><p>${esc(from || "…")}<small>${S.pickup.mode === "dest" ? esc(t("listedDest")) : ""}</small></p>
     <span class="stem"></span><span></span><i class="end"></i><p>${esc(to || "…")}<small>${S.dropoff.mode === "dest" ? esc(t("listedDest")) : ""}</small></p></div>
     <div class="tear"></div>
-    ${S.date ? `<div class="tline"><span>${esc(fmtDay(S.date, lang, {weekday: "long", day: "numeric", month: "long"}))}</span></div>` : ""}
+    ${S.date ? `<div class="tline"><span>${esc(dayList())}</span></div>` : ""}
     <div class="tline"><span>${esc(t("pickupAt"))}</span><b class="big">${S.time || "--:--"}</b></div>
     ${from && to && minutes ? `<div class="tline"><span>${esc(t("estRide"))}</span><b>${esc(t("minN", minutes))}</b></div>` : ""}
     ${S.ret ? `<div class="tline"><span>${esc(t("returnAt"))}</span><b>${S.return_time || "--:--"}</b></div>` : ""}
     <div class="tline"><span>${esc(t("stopWho"))}</span><b>${esc(t("pax", S.adults, S.children))}</b></div>
     ${S.needs.length ? `<div class="tline"><span>${esc(t("colNeeds"))}</span><b>${S.needs.map(x => esc(t("need_" + x))).join(", ")}</b></div>` : ""}
-    ${S.rep && nRides ? `<div class="tline"><span>${esc(t("repeat"))}</span><b>${esc(t("rides", nRides))}</b></div>` : ""}
+    ${S.dates.length > 1 && nRides ? `<div class="tline"><span>${esc(t("inAll"))}</span><b>${esc(t("rides", nRides))}</b></div>` : ""}
     ${nFail ? `<p class="warn">${esc(t("wontFit", nFail))}</p>` : ""}
     <div class="tline"><span>${esc(t("price"))}</span><b>${esc(t("free"))}</b></div>`);
 }
@@ -306,17 +316,16 @@ function showDone(res) {
     ${rets.length ? `<div class="tline"><span>${esc(t("returnAt"))}</span><b>${esc(rets[0].time)}</b></div>` : ""}
     <div class="tline"><span>${esc(t("stopWho"))}</span><b>${esc(t("pax", S.adults, S.children))}</b></div>
     <div class="tline"><span>${esc(t("rides", res.rides.length))}</span><b></b></div>
-    <ul class="dates">${dates.map(d => chip(d)).join("")}${res.skipped.map(d => chip(d, "skip")).join("")}</ul>
-    ${res.skipped.length ? `<p class="hint" style="color:var(--ink)">${res.skipped.length} × ${esc(t("skipped"))}</p>` : ""}
+    <ul class="dates">${dates.map(d => chip(d)).join("")}</ul>
     ${failDates.length ? `<p class="warn">${esc(t("notBooked"))}: ${failDates.map(d => esc(fmtDay(d, lang, {weekday: "short", day: "numeric", month: "short"}))).join(", ")}</p>` : ""}</div>
     <p>${esc(t("doneSub"))}</p>${CFG.demo ? `<p class="hint">${esc(t("doneDemo"))}</p>` : ""}
     <div class="btnrow"><button type="button" class="primary" data-act="again">${esc(t("bookAnother"))}</button><button type="button" class="ghost" data-tab="mine">${esc(t("seeMine"))}</button></div></div>`;
   $("#v-book").hidden = true; $("#v-done").hidden = false; window.scrollTo(0, 0);
 }
 function resetForm() {
-  Object.assign(S, {date: null, time: null, ret: false, return_time: null, rep: false, wdays: [], weeks: 4, children: 0, needs: []});
+  Object.assign(S, {dates: [], date: null, multi: false, time: null, ret: false, return_time: null, children: 0, needs: []});
   S.pickup.street = ""; S.dropoff.street = ""; triedSubmit = false; SERVER = {}; PV = null; AV = {out: null, ret: null};
-  $("#ret").checked = false; $("#rep").checked = false; $("#retbox").hidden = true; $("#repbox").hidden = true; $("#ask").hidden = true;
+  $("#ret").checked = false; $("#retbox").hidden = true; $("#ask").hidden = true;
   renderForm();
 }
 
@@ -416,7 +425,7 @@ function renderTab() {
   if (tab === "about") $("#aboutbody").innerHTML = ABOUT[lang];
 }
 function renderForm() {
-  renderEndpoints(); renderDays(); renderRepeat(); renderNeeds(); stepperState(); renderContact();
+  renderEndpoints(); renderDays(); renderNeeds(); stepperState(); renderContact();
   renderTimes(); renderTicket(); showErrors();
 }
 function applyLang() {
@@ -436,8 +445,7 @@ document.addEventListener("click", e => {
   if (d.lang) { lang = d.lang; setPref("rb-lang", lang); applyLang(); return; }
   if (d.tab) { go(d.tab); return; }
   if (d.mode) { S[d.end].mode = d.mode; renderEndpoints(); renderContact(); changed({avail: true}); return; }
-  if (d.date) { S.date = d.date; renderDays(); changed({avail: true}); return; }
-  if (d.wd) { const w = +d.wd; S.wdays = S.wdays.includes(w) ? S.wdays.filter(x => x !== w) : [...S.wdays, w]; renderRepeat(); changed({avail: true}); return; }
+  if (d.date) { pickDay(d.date); return; }
   if (d.need) { S.needs = S.needs.includes(d.need) ? S.needs.filter(x => x !== d.need) : [...S.needs, d.need]; renderNeeds(); changed(); return; }
   if (d.step) { S[d.step] = Math.max(0, S[d.step] + (+d.d)); stepperState(); changed(); return; }
   if (d.cancel) { cancelRide(+d.cancel); return; }
@@ -466,12 +474,11 @@ document.addEventListener("change", e => {
   if (el.id === "time") { S.time = el.value || null; changed({avail: S.ret}); }
   else if (el.id === "rettime") { S.return_time = el.value || null; changed(); }
   else if (el.id === "ret") { S.ret = el.checked; $("#retbox").hidden = !el.checked; if (!el.checked) S.return_time = null; changed({avail: true}); }
-  else if (el.id === "rep") {
-    S.rep = el.checked; $("#repbox").hidden = !el.checked;
-    if (el.checked && S.date && !S.wdays.length) { S.wdays = [isoWeekday(S.date)]; renderRepeat(); }
-    changed({avail: true});
+  else if (el.id === "multi") {
+    S.multi = el.checked;
+    if (!S.multi && S.dates.length > 1) setDates(S.dates.slice(0, 1));   // back to one day: keep the first
+    renderDays(); changed({avail: true});
   }
-  else if (el.id === "weeks") { S.weeks = +el.value; changed({avail: true}); }
   else if (el.id === "sms") { S.sms = el.checked; }
   else if (el.id === "resident") { S.resident = el.checked; changed(); }
 });

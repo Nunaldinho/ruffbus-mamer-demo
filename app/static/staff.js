@@ -256,7 +256,7 @@ function renderPhone() {
 }
 function pbTrip() {
   return {pickup: endpoint(pb.pickup), dropoff: endpoint(pb.dropoff), date: pb.date, time: pb.time, return_time: pb.return_time,
-          repeat_weekdays: [], repeat_weeks: 1, adults: pb.adults, children: pb.children, needs: pb.needs, resident_declared: pb.resident};
+          adults: pb.adults, children: pb.children, needs: pb.needs, resident_declared: pb.resident};
 }
 function renderPbTimes() {
   const opt = (s, chosen) => `<option value="${s.time}" ${chosen === s.time ? "selected" : ""} ${!s.free && chosen !== s.time ? "disabled" : ""}>${esc(s.time + " – " + (s.free ? t("slotFree", s.free) : t("slotFull")))}</option>`;

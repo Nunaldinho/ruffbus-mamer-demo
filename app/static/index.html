@@ -59,6 +59,8 @@
                 <span class="lab" id="lab-day" data-i18n="date"></span>
                 <div class="days" id="days" role="group" aria-labelledby="lab-day"></div>
                 <p class="hint" id="hourshint"></p>
+                <label class="check"><input type="checkbox" id="multi"><span data-i18n="multiDays"></span></label>
+                <p class="hint" id="multihint" hidden></p>
               </div>
               <div class="field">
                 <label class="lab" for="time" data-i18n="time"></label>
@@ -69,16 +71,6 @@
               <div class="sub" id="retbox" hidden>
                 <label class="lab" for="rettime" data-i18n="returnTime"></label>
                 <select id="rettime"></select>
-              </div>
-              <label class="check"><input type="checkbox" id="rep"><span data-i18n="repeat"></span></label>
-              <div class="sub" id="repbox" hidden>
-                <span class="lab" id="lab-wd" data-i18n="repeatDays"></span>
-                <div class="chips" id="wdays" role="group" aria-labelledby="lab-wd"></div>
-                <div class="field">
-                  <label class="lab" for="weeks" data-i18n="repeatWeeks"></label>
-                  <select id="weeks"></select>
-                </div>
-                <p class="hint" data-i18n="repeatHint"></p>
               </div>
               <div class="errmsg stepmsg" id="when-err"></div>
             </div>
