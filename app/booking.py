@@ -80,12 +80,19 @@ def free_buses(cur, start: datetime, end: datetime) -> list[int]:
 
 
 def _put_on_bus(cur, bus_id: int, sql: str, params: tuple) -> bool:
-    """Run an INSERT/UPDATE that places a ride on a bus. False if the bus turned out to be taken."""
+    """Run an INSERT/UPDATE that places a ride on a bus. False if the bus turned out to be taken.
+
+    Bookings for the same bus take turns: each one locks the bus first and waits for the previous
+    booking to finish. Without this, two bookings trying the same bus at the same moment can wait
+    for each other forever (PostgreSQL checks a new ride against rides that are not saved yet),
+    until PostgreSQL cancels one of them ("deadlock detected"). The database constraint still
+    decides who gets the bus; the lock only makes the bookings queue up.
+    """
     conn = cur.connection
     try:
-        with conn.transaction():  # savepoint: a refusal only undoes this one attempt
-            # Waits if someone is taking this bus out of service right now.
-            cur.execute("SELECT 1 FROM bus WHERE id = %s FOR SHARE", (bus_id,))
+        with conn.transaction():  # savepoint: a refusal only undoes this one attempt (and its lock)
+            # Also waits if someone is taking this bus out of service right now.
+            cur.execute("SELECT 1 FROM bus WHERE id = %s FOR NO KEY UPDATE", (bus_id,))
             cur.execute(sql, params)
         return True
     except errors.ExclusionViolation:

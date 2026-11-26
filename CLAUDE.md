@@ -12,7 +12,7 @@ Live demo (fictitious data, reset daily): https://ruffbus-mamer-demo.onrender.co
 
 ## Commands
 
-- Tests (40; they wipe the target database; the clock is frozen at Monday 23 November 2026, 08:00):
+- Tests (44; they wipe the target database; the clock is frozen at Monday 23 November 2026, 08:00):
   `TEST_DATABASE_URL=postgresql://ruffbus:ruffbus@localhost:5432/ruffbus_test pytest`
 - Run locally: `docker compose up --build`, then http://localhost:8000 and http://localhost:8000/staff
 - Tasks: `python -m app.cli migrate | create-staff NAME --role ROLE | retention | reset-demo`

@@ -48,9 +48,11 @@ A booking with a return trip, or for several days (up to three), becomes several
 1. `no_double_booking`: an exclusion constraint that refuses two active rides (`requested` or `confirmed`) with the same `bus_id` and overlapping `slot`.
 2. `ride_bus_in_service`: a trigger that refuses a ride on a bus that is out of service at that time.
 
-Booking runs in one transaction. For each ride the app lists free buses, least-used that day first, and tries to insert the ride on the first one inside a savepoint. If a concurrent booking took that bus, PostgreSQL waits for it, then refuses; the savepoint is rolled back and the next bus is tried. Rides are processed in time order so two bookings never wait on each other in a cycle; a deadlock, should one occur, is retried.
+Booking runs in one transaction. For each ride the app lists free buses, least-used that day first, and tries to insert the ride on the first one inside a savepoint. Before inserting, it locks that bus's row (`FOR NO KEY UPDATE`), so bookings for the same bus take turns: each waits for the previous one to finish. If that booking took the bus, the constraint refuses the insert; the savepoint (and its lock) is rolled back and the next bus is tried. Rides are processed in time order to keep lock waits one-way; a deadlock, should one still occur, is retried.
 
-Taking a bus out of service locks the bus row (`FOR UPDATE`), while placing a ride takes a shared lock on it (`FOR SHARE`). A ride therefore can't slip onto a bus at the moment it is being taken out of service.
+The lock matters because an exclusion constraint checks a new ride against rides that are not saved yet. Without it, two bookings inserting on the same bus at the same moment each wait for the other until PostgreSQL cancels one ("deadlock detected"); with ten simultaneous bookings this repeated until bookings failed while a bus was still free.
+
+Taking a bus out of service locks the bus row (`FOR UPDATE`), which waits for, and blocks, rides being placed on it. A ride therefore can't slip onto a bus at the moment it is being taken out of service.
 
 The booking preview runs the real booking in a transaction that is always rolled back, so what the resident sees ("1 ride won't fit") is exactly what booking would do at that moment.
 

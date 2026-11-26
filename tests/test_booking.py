@@ -52,17 +52,24 @@ def test_three_buses_take_three_bookings_and_the_fourth_is_turned_away(conn):
     assert conn.execute("SELECT count(*) AS n FROM booking").fetchone()["n"] == 3
 
 
-def test_concurrent_bookings_never_overbook():
-    """Ten people press "Request ride" for the same slot at the same moment: exactly three get a bus."""
+@pytest.mark.parametrize("time", ["10:00", "11:00", "12:00", "13:00", "14:00"])
+def test_concurrent_bookings_never_overbook(time):
+    """Ten people press "Request ride" for the same slot at the same moment: exactly three get a bus,
+    no bus is left empty and nobody gets an error other than "full".
+
+    Several rounds, because a clash between bookings depends on timing and does not happen every time.
+    """
     results, barrier = [], threading.Barrier(10)
 
     def worker():
         with psycopg.connect(TEST_URL, autocommit=True, row_factory=dict_row) as c:
             barrier.wait()
             try:
-                results.append(book(c).booked[0]["bus"])
+                results.append(book(c, time=time).booked[0]["bus"])
             except BookingError as e:
                 results.append(e.code)
+            except Exception as e:  # anything else is a failure: record it instead of losing it
+                results.append(type(e).__name__)
 
     threads = [threading.Thread(target=worker) for _ in range(10)]
     for th in threads:
@@ -70,7 +77,7 @@ def test_concurrent_bookings_never_overbook():
     for th in threads:
         th.join()
     assert sorted(r for r in results if isinstance(r, int)) == [1, 2, 3]
-    assert results.count("errFull") == 7
+    assert sorted(r for r in results if not isinstance(r, int)) == ["errFull"] * 7
 
 
 def test_least_used_bus_is_chosen_first(conn):
